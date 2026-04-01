@@ -368,7 +368,7 @@ npm run build
 如有问题或建议，请通过以下方式联系：
 
 - GitHub Issues：[项目 Issues 页面](https://github.com/FurinaLuna/hot-monitor/issues)
-- 邮箱：[your-email@example.com](mailto:your-email@example.com)
+- 邮箱：[2517523791@qq.com](mailto:2517523791@qq.com)
 
 ---
 
@@ -377,3 +377,110 @@ npm run build
 **🌟 如果这个项目对你有帮助，请给个 Star 支持一下！**
 
 </div>
+
+## 🎨 设计系统
+
+本项目采用完整的现代化设计系统，包括：
+
+### 📐 视觉系统
+- **色彩系统**：基于紧急程度分级的4级色彩系统（紧急/高/中/低），以及数据可视化专用色系
+- **排版系统**：清晰的字体层次（h1-h6、正文、辅助），基于8px网格的完美比例
+- **间距系统**：基于8px网格的动态间距公式，创造有机不对称布局
+
+### 🎭 组件系统
+- **热点卡片**：三种差异化卡片样式
+  - 🔴 紧急热点：红色渐变 + 脉冲动画
+  - 🟠 高优先级：橙色渐变 + 轻微浮动动画
+  - 🟢 标准卡片：悬停扩展效果
+- **动画统计**：实时数字滚动 + 迷你趋势图表
+- **雷达布局**：按重要性和时间动态排布的雷达扫描布局
+
+### ✨ 动效系统
+- **情境化动效**：动画与用户操作、数据状态相关联
+- **微交互**：按钮点击、卡片悬停、拖拽排序等微交互
+- **品牌动效**：火焰脉冲、雷达扫描等品牌专属动效
+
+### 📂 目录结构
+```
+client/src/
+├── design-system/          # 设计系统
+│   ├── colors.ts           # 色彩系统
+│   ├── typography.ts       # 字体系统
+│   ├── spacing.ts          # 间距系统
+│   ├── animations.ts       # 动效系统
+│   └── index.ts            # 设计系统导出
+├── components/
+│   ├── hotspots/           # 热点组件
+│   │   ├── HotspotCard/    # 热点卡片
+│   │   └── HotspotRadar/   # 雷达布局
+│   ├── stats/              # 统计组件
+│   │   └── AnimatedStatCard.tsx
+│   ├── ui/                 # UI基础组件
+│   └── FilterSortBar.tsx   # 筛选排序栏
+```
+
+## 🚀 快速开始
+
+### 前置要求
+- Node.js 18+
+- PostgreSQL 数据库
+- SMTP 邮件服务（可选）
+
+### 安装步骤
+
+1. **克隆项目**
+```bash
+git clone https://github.com/FurinaLuna/hot-monitor.git
+cd zcw-hot-monitor
+```
+
+2. **安装依赖**
+```bash
+# 后端
+cd server
+npm install
+
+# 前端
+cd ../client
+npm install
+```
+
+3. **配置环境变量**
+
+创建 `server/.env`：
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/hot_monitor
+PORT=3000
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your-email@example.com
+SMTP_PASS=your-password
+OPENROUTER_API_KEY=your-api-key
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+```
+
+创建 `client/.env`：
+```env
+VITE_API_URL=http://localhost:3000
+VITE_WS_URL=ws://localhost:3000
+```
+
+4. **数据库初始化**
+```bash
+cd server
+npx prisma migrate dev
+npx prisma db seed
+```
+
+5. **启动服务**
+```bash
+# 启动后端
+cd server
+npm run dev
+
+# 启动前端（新终端）
+cd client
+npm run dev
+```
+
+访问 http://localhost:5173 查看应用
