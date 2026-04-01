@@ -5,4 +5,3 @@ dist/
 *.db-journal
 .DS_Store
 .idea/
-.claude/

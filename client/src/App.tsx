@@ -1,15 +1,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Flame, Search, Plus, Bell, Trash2,
+import { 
+  Flame, Search, Plus, Bell, Trash2, 
   ExternalLink, RefreshCw, X, Check, AlertTriangle,
-  Zap, TrendingUp, Twitter, Globe, Eye, Activity, Clock,
+  Zap, TrendingUp, Twitter, Globe, Eye, Activity, Clock, Target,
   ChevronLeft, ChevronRight,
   MessageCircle, Repeat2, Quote, User, Shield, ShieldAlert,
-  ChevronDown, ChevronUp, ChevronsUpDown, ThermometerSun, FileText,
-  Target
+  ChevronDown, ChevronUp, ChevronsUpDown, ThermometerSun, FileText
 } from 'lucide-react';
-import {
+import { 
   keywordsApi, hotspotsApi, notificationsApi, triggerHotspotCheck,
   type Keyword, type Hotspot, type Stats, type Notification
 } from './services/api';
@@ -21,15 +20,30 @@ import { Meteors } from './components/ui/meteors';
 import FilterSortBar, { defaultFilterState, type FilterState } from './components/FilterSortBar';
 import { sortHotspots } from './utils/sortHotspots';
 import { relativeTime, formatDateTime } from './utils/relativeTime';
-import {
-  AnimatedStatCard,
-  TotalHotspotsCard,
-  UrgentHotspotsCard,
-  TodayHotspotsCard,
-  AvgRelevanceCard,
-  RealHotspotsCard
-} from './components/stats/AnimatedStatCard';
-import { HotspotCard } from './components/hotspots/HotspotCard';
+// TextGenerateEffect available for future use
+
+/** 计算热度综合指标（归一化 0-100） */
+function calcHeatScore(h: Hotspot): number {
+  const likes = h.likeCount ?? 0;
+  const retweets = h.retweetCount ?? 0;
+  const replies = h.replyCount ?? 0;
+  const comments = h.commentCount ?? 0;
+  const quotes = h.quoteCount ?? 0;
+  const views = h.viewCount ?? 0;
+  // 加权公式：转发最重、其次点赞、然后评论/回复
+  const raw = likes * 2 + retweets * 3 + replies * 1.5 + comments * 1.5 + quotes * 2 + views / 100;
+  // log 压缩到 0-100
+  if (raw <= 0) return 0;
+  return Math.min(100, Math.round(Math.log10(raw + 1) * 25));
+}
+
+function getHeatLevel(score: number): { label: string; color: string } {
+  if (score >= 80) return { label: '爆', color: 'text-red-400' };
+  if (score >= 60) return { label: '热', color: 'text-orange-400' };
+  if (score >= 40) return { label: '温', color: 'text-amber-400' };
+  if (score >= 20) return { label: '凉', color: 'text-blue-400' };
+  return { label: '冷', color: 'text-slate-500' };
+}
 
 function App() {
   const [keywords, setKeywords] = useState<Keyword[]>([]);
@@ -275,6 +289,40 @@ function App() {
     return results;
   }, [searchResults, searchFilters]);
 
+  const getImportanceIcon = (importance: string) => {
+    switch (importance) {
+      case 'urgent': return <AlertTriangle className="w-4 h-4" />;
+      case 'high': return <Flame className="w-4 h-4" />;
+      case 'medium': return <Zap className="w-4 h-4" />;
+      default: return <TrendingUp className="w-4 h-4" />;
+    }
+  };
+
+  const getSourceIcon = (source: string) => {
+    switch (source) {
+      case 'twitter': return <Twitter className="w-4 h-4" />;
+      case 'bilibili': return <Eye className="w-4 h-4" />;
+      case 'weibo': return <Activity className="w-4 h-4" />;
+      case 'sogou': return <Search className="w-4 h-4" />;
+      case 'hackernews': return <Zap className="w-4 h-4" />;
+      default: return <Globe className="w-4 h-4" />;
+    }
+  };
+
+  const getSourceLabel = (source: string) => {
+    const labels: Record<string, string> = {
+      twitter: 'Twitter',
+      bing: 'Bing',
+      google: 'Google',
+      sogou: '搜狗',
+      bilibili: 'Bilibili',
+      weibo: '微博热搜',
+      hackernews: 'HackerNews',
+      duckduckgo: 'DuckDuckGo'
+    };
+    return labels[source] || source;
+  };
+
   return (
     <div className="min-h-screen bg-[#050510] relative overflow-hidden">
       {/* Background Effects */}
@@ -422,51 +470,71 @@ function App() {
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
           <div className="space-y-8">
-            {/* Hero Stats - 使用新的动画统计卡片组件 */}
+            {/* Hero Stats */}
             {stats && (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <AnimatedStatCard
-                  title="热点总数"
-                  value={stats.total}
-                  icon={<Flame className="w-4 h-4 text-white" />}
-                  color="red"
-                  description="监控到的热点总数"
-                  showSparkline
-                  animate={true}
-                  delay={0}
-                />
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="relative group p-5 rounded-2xl bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/10 overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative">
+                    <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
+                      <Activity className="w-4 h-4" />
+                      总热点
+                    </div>
+                    <p className="text-3xl font-bold text-white">{stats.total}</p>
+                  </div>
+                </motion.div>
 
-                <AnimatedStatCard
-                  title="今日新增"
-                  value={stats.today}
-                  icon={<Clock className="w-4 h-4 text-white" />}
-                  color="cyan"
-                  description="过去24小时内新增热点"
-                  showSparkline
-                  animate={true}
-                  delay={0.05}
-                />
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 }}
+                  className="relative group p-5 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-transparent border border-cyan-500/10 overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative">
+                    <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
+                      <Clock className="w-4 h-4" />
+                      今日新增
+                    </div>
+                    <p className="text-3xl font-bold text-cyan-400">{stats.today}</p>
+                  </div>
+                </motion.div>
 
-                <AnimatedStatCard
-                  title="紧急热点"
-                  value={stats.urgent}
-                  icon={<AlertTriangle className="w-4 h-4 text-white" />}
-                  color="amber"
-                  description="需要立即关注的紧急热点"
-                  showSparkline
-                  animate={true}
-                  delay={0.1}
-                />
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="relative group p-5 rounded-2xl bg-gradient-to-br from-red-500/10 to-transparent border border-red-500/10 overflow-hidden"
+                >
+                  <Meteors number={6} />
+                  <div className="relative">
+                    <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
+                      <AlertTriangle className="w-4 h-4" />
+                      紧急热点
+                    </div>
+                    <p className="text-3xl font-bold text-red-400">{stats.urgent}</p>
+                  </div>
+                </motion.div>
 
-                <AnimatedStatCard
-                  title="监控词"
-                  value={keywords.filter(k => k.isActive).length}
-                  icon={<TargetIcon className="w-4 h-4 text-white" />}
-                  color="emerald"
-                  description="激活的监控关键词数量"
-                  animate={true}
-                  delay={0.15}
-                />
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                  className="relative group p-5 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/10 overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative">
+                    <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
+                      <Target className="w-4 h-4" />
+                      监控词
+                    </div>
+                    <p className="text-3xl font-bold text-emerald-400">{keywords.filter(k => k.isActive).length}</p>
+                  </div>
+                </motion.div>
               </div>
             )}
 
@@ -516,23 +584,239 @@ function App() {
                     </div>
                   )}
 
-                  {/* 使用新的HotspotCard组件 */}
-                  <div className="space-y-3">
-                    {hotspots.map((hotspot, index) => {
-                      const heatScore = calcHeatScore(hotspot);
-                      const heat = getHeatLevel(heatScore);
+                  {hotspots.map((hotspot, index) => {
+                    const heatScore = calcHeatScore(hotspot);
+                    const heat = getHeatLevel(heatScore);
+                    return (
+                    <motion.div
+                      key={hotspot.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.03 }}
+                      className="group p-5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-white/10 transition-all"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          {/* Row 1: Meta badges */}
+                          <div className="flex flex-wrap items-center gap-2 mb-3">
+                            <span className={cn(
+                              "px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider flex items-center",
+                              hotspot.importance === 'urgent' && "bg-red-500/15 text-red-400 border border-red-500/20",
+                              hotspot.importance === 'high' && "bg-orange-500/15 text-orange-400 border border-orange-500/20",
+                              hotspot.importance === 'medium' && "bg-amber-500/15 text-amber-400 border border-amber-500/20",
+                              hotspot.importance === 'low' && "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
+                            )}>
+                              {getImportanceIcon(hotspot.importance)}
+                              <span className="ml-1">{hotspot.importance}</span>
+                            </span>
+                            <span className="flex items-center gap-1 text-xs text-slate-600">
+                              {getSourceIcon(hotspot.source)}
+                              {getSourceLabel(hotspot.source)}
+                            </span>
+                            {hotspot.keyword && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                {hotspot.keyword.text}
+                              </span>
+                            )}
+                            {/* 真实性标记 */}
+                            {!hotspot.isReal && (
+                              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-red-500/10 text-red-400 border border-red-500/20">
+                                <ShieldAlert className="w-3 h-3" />
+                                可疑
+                              </span>
+                            )}
+                            {hotspot.isReal && hotspot.relevance >= 80 && (
+                              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                <Shield className="w-3 h-3" />
+                                可信
+                              </span>
+                            )}
+                            {hotspot.keywordMentioned === true && (
+                              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                                <Target className="w-3 h-3" />
+                                直接提及
+                              </span>
+                            )}
+                            {hotspot.keywordMentioned === false && (
+                              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
+                                <Target className="w-3 h-3" />
+                                间接相关
+                              </span>
+                            )}
+                            {/* 热度综合指标 */}
+                            <span className={cn("flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-white/5 border border-white/10 font-medium", heat.color)}>
+                              <ThermometerSun className="w-3 h-3" />
+                              {heat.label} {heatScore}
+                            </span>
+                          </div>
+                          
+                          {/* Title */}
+                          <h3 className="font-medium text-white mb-2 line-clamp-2 group-hover:text-blue-400 transition-colors">
+                            {hotspot.title}
+                          </h3>
+                          
+                          {/* AI Summary - 标注 */}
+                          {hotspot.summary && (
+                            <div className="mb-3">
+                              <span className="text-[10px] text-blue-400/60 font-medium mr-1.5">AI 摘要</span>
+                              <span className="text-sm text-slate-500">{hotspot.summary}</span>
+                            </div>
+                          )}
 
-                      return (
-                        <HotspotCard
-                          key={hotspot.id}
-                          hotspot={hotspot}
-                          layout="grid"
-                          animate={true}
-                          onClick={() => window.open(hotspot.url, '_blank')}
-                        />
-                      );
-                    })}
-                  </div>
+                          {/* 作者信息 */}
+                          {hotspot.authorName && (
+                            <div className="flex items-center gap-2 mb-3">
+                              {hotspot.authorAvatar ? (
+                                <img src={hotspot.authorAvatar} alt="" className="w-5 h-5 rounded-full object-cover" />
+                              ) : (
+                                <User className="w-4 h-4 text-slate-600" />
+                              )}
+                              <span className="text-xs text-slate-400">
+                                {hotspot.authorName}
+                                {hotspot.authorUsername && <span className="text-slate-600 ml-1">@{hotspot.authorUsername}</span>}
+                              </span>
+                              {hotspot.authorVerified && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400">✓ 认证</span>
+                              )}
+                              {hotspot.authorFollowers != null && hotspot.authorFollowers > 0 && (
+                                <span className="text-[10px] text-slate-600">{hotspot.authorFollowers.toLocaleString()} 粉丝</span>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* 互动数据 */}
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 mb-2">
+                            <span className="flex items-center gap-1">
+                              <Target className="w-3.5 h-3.5" />
+                              相关性 {hotspot.relevance}%
+                            </span>
+                            {hotspot.likeCount != null && hotspot.likeCount > 0 && (
+                              <span className="flex items-center gap-1" title="点赞">
+                                <Zap className="w-3.5 h-3.5" />
+                                {hotspot.likeCount.toLocaleString()}
+                              </span>
+                            )}
+                            {hotspot.retweetCount != null && hotspot.retweetCount > 0 && (
+                              <span className="flex items-center gap-1" title="转发">
+                                <Repeat2 className="w-3.5 h-3.5" />
+                                {hotspot.retweetCount.toLocaleString()}
+                              </span>
+                            )}
+                            {hotspot.replyCount != null && hotspot.replyCount > 0 && (
+                              <span className="flex items-center gap-1" title="回复">
+                                <MessageCircle className="w-3.5 h-3.5" />
+                                {hotspot.replyCount.toLocaleString()}
+                              </span>
+                            )}
+                            {hotspot.commentCount != null && hotspot.commentCount > 0 && (
+                              <span className="flex items-center gap-1" title="评论">
+                                <MessageCircle className="w-3.5 h-3.5" />
+                                {hotspot.commentCount.toLocaleString()}
+                              </span>
+                            )}
+                            {hotspot.quoteCount != null && hotspot.quoteCount > 0 && (
+                              <span className="flex items-center gap-1" title="引用">
+                                <Quote className="w-3.5 h-3.5" />
+                                {hotspot.quoteCount.toLocaleString()}
+                              </span>
+                            )}
+                            {hotspot.viewCount != null && hotspot.viewCount > 0 && (
+                              <span className="flex items-center gap-1" title="浏览量">
+                                <Eye className="w-3.5 h-3.5" />
+                                {hotspot.viewCount.toLocaleString()}
+                              </span>
+                            )}
+                            {hotspot.danmakuCount != null && hotspot.danmakuCount > 0 && (
+                              <span className="flex items-center gap-1" title="弹幕">
+                                💬 {hotspot.danmakuCount.toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* 时间信息 */}
+                          <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-600">
+                            {hotspot.publishedAt && (
+                              <span className="flex items-center gap-1" title={`发布于 ${formatDateTime(hotspot.publishedAt)}`}>
+                                <Clock className="w-3 h-3" />
+                                发布 {relativeTime(hotspot.publishedAt)}
+                              </span>
+                            )}
+                            <span className="flex items-center gap-1" title={`抓取于 ${formatDateTime(hotspot.createdAt)}`}>
+                              <Activity className="w-3 h-3" />
+                              抓取 {relativeTime(hotspot.createdAt)}
+                            </span>
+                          </div>
+
+                          {/* AI 相关性理由 - 可折叠 */}
+                          {hotspot.relevanceReason && (
+                            <div className="mt-2">
+                              <button
+                                onClick={() => toggleReason(hotspot.id)}
+                                className="flex items-center gap-1 text-[11px] text-blue-400/70 hover:text-blue-400 transition-colors"
+                              >
+                                {expandedReasons.has(hotspot.id) ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                AI 分析理由
+                              </button>
+                              <AnimatePresence>
+                                {expandedReasons.has(hotspot.id) && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden"
+                                  >
+                                    <p className="text-xs text-slate-500 mt-1 pl-4 border-l-2 border-blue-500/20">
+                                      {hotspot.relevanceReason}
+                                    </p>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          )}
+
+                          {/* 原始内容 - 可折叠 */}
+                          {hotspot.content && hotspot.content !== hotspot.summary && (
+                            <div className="mt-2">
+                              <button
+                                onClick={() => toggleContent(hotspot.id)}
+                                className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-300 transition-colors"
+                              >
+                                {expandedContents.has(hotspot.id) ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                <FileText className="w-3 h-3" />
+                                原始内容
+                              </button>
+                              <AnimatePresence>
+                                {expandedContents.has(hotspot.id) && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden"
+                                  >
+                                    <p className="text-xs text-slate-500 mt-1 pl-4 border-l-2 border-white/10 whitespace-pre-wrap break-words max-h-40 overflow-y-auto">
+                                      {hotspot.content}
+                                    </p>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Link */}
+                        <a
+                          href={hotspot.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-2.5 rounded-xl bg-white/5 hover:bg-blue-500/20 text-slate-500 hover:text-blue-400 transition-all opacity-0 group-hover:opacity-100"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </div>
+                    </motion.div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -618,7 +902,7 @@ function App() {
             </form>
 
             {/* Keywords Grid */}
-            <div className="card-grid">
+            <div className="grid gap-3 md:grid-cols-2">
               <AnimatePresence>
                 {keywords.map((keyword, i) => (
                   <motion.div
@@ -629,9 +913,9 @@ function App() {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ delay: i * 0.02 }}
                     className={cn(
-                      "card card-hoverable p-4",
-                      keyword.isActive
-                        ? "bg-white/[0.03] border-blue-500/20"
+                      "group p-4 rounded-xl border transition-all",
+                      keyword.isActive 
+                        ? "bg-white/[0.03] border-blue-500/20 hover:border-blue-500/30" 
                         : "bg-white/[0.01] border-white/5 opacity-60"
                     )}
                   >
@@ -650,7 +934,7 @@ function App() {
                             keyword.isActive ? "left-6" : "left-1"
                           )} />
                         </button>
-
+                        
                         <div>
                           <span className={cn("font-medium", keyword.isActive ? "text-white" : "text-slate-500")}>
                             {keyword.text}
@@ -662,7 +946,7 @@ function App() {
                           )}
                         </div>
                       </div>
-
+                      
                       <button
                         onClick={() => handleDeleteKeyword(keyword.id)}
                         className="p-2 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
@@ -735,15 +1019,98 @@ function App() {
                   <p className="text-sm text-slate-600 mt-1">尝试调整筛选条件</p>
                 </div>
               )}
-              {filteredSearchResults.map((hotspot, i) => (
-                <HotspotCard
-                  key={hotspot.id}
-                  hotspot={hotspot}
-                  layout="list"
-                  animate={true}
-                  onClick={() => window.open(hotspot.url, '_blank')}
-                />
-              ))}
+              {filteredSearchResults.map((hotspot, i) => {
+                const heatScore = calcHeatScore(hotspot);
+                const heat = getHeatLevel(heatScore);
+                return (
+                <motion.div 
+                  key={hotspot.id} 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                  className="group p-5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 transition-all"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <span className={cn(
+                          "px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase flex items-center",
+                          hotspot.importance === 'urgent' && "bg-red-500/15 text-red-400 border border-red-500/20",
+                          hotspot.importance === 'high' && "bg-orange-500/15 text-orange-400 border border-orange-500/20",
+                          hotspot.importance === 'medium' && "bg-amber-500/15 text-amber-400 border border-amber-500/20",
+                          hotspot.importance === 'low' && "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
+                        )}>
+                          {getImportanceIcon(hotspot.importance)}
+                          <span className="ml-1">{hotspot.importance}</span>
+                        </span>
+                        <span className="flex items-center gap-1 text-xs text-slate-600">
+                          {getSourceIcon(hotspot.source)}
+                          {getSourceLabel(hotspot.source)}
+                        </span>
+                        {!hotspot.isReal && (
+                          <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-red-500/10 text-red-400 border border-red-500/20">
+                            <ShieldAlert className="w-3 h-3" />
+                            可疑
+                          </span>
+                        )}
+                        <span className={cn("flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-white/5 border border-white/10 font-medium", heat.color)}>
+                          <ThermometerSun className="w-3 h-3" />
+                          {heat.label} {heatScore}
+                        </span>
+                      </div>
+                      <h3 className="font-medium text-white mb-2 group-hover:text-blue-400 transition-colors">{hotspot.title}</h3>
+                      {hotspot.summary && (
+                        <div className="mb-2">
+                          <span className="text-[10px] text-blue-400/60 font-medium mr-1.5">AI 摘要</span>
+                          <span className="text-sm text-slate-500">{hotspot.summary}</span>
+                        </div>
+                      )}
+                      {hotspot.authorName && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <User className="w-4 h-4 text-slate-600" />
+                          <span className="text-xs text-slate-400">{hotspot.authorName}</span>
+                          {hotspot.authorVerified && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400">✓ 认证</span>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600">
+                        <span className="flex items-center gap-1">
+                          <Target className="w-3.5 h-3.5" />
+                          相关性 {hotspot.relevance}%
+                        </span>
+                        {hotspot.likeCount != null && hotspot.likeCount > 0 && (
+                          <span className="flex items-center gap-1" title="点赞">
+                            <Zap className="w-3.5 h-3.5" />
+                            {hotspot.likeCount.toLocaleString()}
+                          </span>
+                        )}
+                        {hotspot.viewCount != null && hotspot.viewCount > 0 && (
+                          <span className="flex items-center gap-1" title="浏览量">
+                            <Eye className="w-3.5 h-3.5" />
+                            {hotspot.viewCount.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                      {hotspot.publishedAt && (
+                        <div className="flex items-center gap-1 text-[11px] text-slate-600 mt-1" title={formatDateTime(hotspot.publishedAt)}>
+                          <Clock className="w-3 h-3" />
+                          发布 {relativeTime(hotspot.publishedAt)}
+                        </div>
+                      )}
+                    </div>
+                    <a
+                      href={hotspot.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 px-4 py-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-sm font-medium transition-all"
+                    >
+                      查看
+                    </a>
+                  </div>
+                </motion.div>
+                );
+              })}
             </div>
           </div>
         )}
