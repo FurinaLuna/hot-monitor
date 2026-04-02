@@ -23,6 +23,7 @@ WORKDIR /app
 RUN mkdir -p /app/data
 
 ENV NODE_ENV=production
+ENV PORT=3001
 
 # Copy package files for production install
 COPY server/package*.json ./
