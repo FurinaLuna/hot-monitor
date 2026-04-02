@@ -9,8 +9,8 @@ COPY server/prisma ./prisma
 COPY server/tsconfig.json ./
 COPY server/src ./src
 
-# Install dependencies and build
-RUN npm ci --omit=dev
+# Install dependencies (including dev) for TypeScript compilation
+RUN npm ci
 RUN npx prisma generate
 RUN npm run build
 
@@ -19,18 +19,25 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy .env if needed for runtime
+# Create persistent data directory for SQLite
+RUN mkdir -p /app/data
+
 ENV NODE_ENV=production
 
-# Copy built application and dependencies from builder
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/prisma ./prisma
+# Copy package files for production install
 COPY server/package*.json ./
+
+# Install only production dependencies
+RUN npm ci --omit=dev
+
+# Copy built application from builder
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
 
 # Generate Prisma client in production
 RUN npx prisma generate
 
 EXPOSE 3001
 
-CMD ["node", "dist/index.js"]
+# Run migrations then start the app
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]

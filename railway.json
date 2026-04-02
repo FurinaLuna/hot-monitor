@@ -7,6 +7,12 @@
   "deploy": {
     "numReplicas": 1,
     "sleepApplication": false,
-    "startCommand": "node dist/index.js"
-  }
+    "startCommand": "sh -c 'npx prisma migrate deploy && node dist/index.js'"
+  },
+  "volumes": [
+    {
+      "name": "sqlite_data",
+      "mountPath": "/app/data"
+    }
+  ]
 }
