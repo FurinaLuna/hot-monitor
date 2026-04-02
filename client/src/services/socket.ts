@@ -1,10 +1,11 @@
 import { io, Socket } from 'socket.io-client';
 
 let socket: Socket | null = null;
+const SOCKET_BASE_URL = import.meta.env.VITE_SOCKET_URL?.trim() || window.location.origin;
 
 export function getSocket(): Socket {
   if (!socket) {
-    socket = io(window.location.origin, {
+    socket = io(SOCKET_BASE_URL, {
       path: '/socket.io',
       transports: ['websocket', 'polling']
     });

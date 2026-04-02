@@ -1,0 +1,46 @@
+# Version control
+.git
+.gitignore
+.env
+.env.local
+.env.*.local
+
+# Documentation
+docs/
+README.md
+*.md
+
+# Client/Frontend
+client/
+
+# Skills
+skills/
+
+# Development files
+.vscode/
+.idea/
+*.log
+*.logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node modules (build layer will handle this)
+**/node_modules/
+
+# Build outputs
+**/dist/
+**/build/
+.next/
+
+# Testing
+**/.test/
+**/__tests__/
+**/coverage/
+
+# Railway config (not needed in runtime)
+railway.json

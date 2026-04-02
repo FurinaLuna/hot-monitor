@@ -1,4 +1,5 @@
-const API_BASE = '/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.trim() || '';
+const API_BASE = API_BASE_URL ? `${API_BASE_URL}/api` : '/api';
 
 export interface Keyword {
   id: string;

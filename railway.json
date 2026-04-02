@@ -1,12 +1,12 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
-  "rootDirectory": "server",
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "Dockerfile"
   },
   "deploy": {
     "numReplicas": 1,
-    "sleepApplication": false
+    "sleepApplication": false,
+    "startCommand": "node dist/index.js"
   }
 }
