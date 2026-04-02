@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Flame, Search, Plus, Bell, Trash2, 
+import {
+  Flame, Search, Plus, Bell, Trash2,
   ExternalLink, RefreshCw, X, Check, AlertTriangle,
   Zap, TrendingUp, Twitter, Globe, Eye, Activity, Clock, Target,
   ChevronLeft, ChevronRight,
   MessageCircle, Repeat2, Quote, User, Shield, ShieldAlert,
   ChevronDown, ChevronUp, ChevronsUpDown, ThermometerSun, FileText
 } from 'lucide-react';
-import { 
+import {
   keywordsApi, hotspotsApi, notificationsApi, triggerHotspotCheck,
   type Keyword, type Hotspot, type Stats, type Notification
 } from './services/api';
@@ -16,10 +16,10 @@ import { onNewHotspot, onNotification, subscribeToKeywords } from './services/so
 import { cn } from './lib/utils';
 import { Spotlight } from './components/ui/spotlight';
 import { BackgroundBeams } from './components/ui/background-beams';
-import { Meteors } from './components/ui/meteors';
 import FilterSortBar, { defaultFilterState, type FilterState } from './components/FilterSortBar';
 import { sortHotspots } from './utils/sortHotspots';
 import { relativeTime, formatDateTime } from './utils/relativeTime';
+import { StatCard, HeatBar, Badge, ImportanceBadge, SourceBadge } from './components/ui';
 // TextGenerateEffect available for future use
 
 /** 计算热度综合指标（归一化 0-100） */
@@ -473,68 +473,38 @@ function App() {
             {/* Hero Stats */}
             {stats && (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="relative group p-5 rounded-2xl bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/10 overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative">
-                    <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
-                      <Activity className="w-4 h-4" />
-                      总热点
-                    </div>
-                    <p className="text-3xl font-bold text-white">{stats.total}</p>
-                  </div>
-                </motion.div>
+                <StatCard
+                  label="总热点"
+                  value={stats.total}
+                  icon={Activity}
+                  gradient="primary"
+                  delay={0}
+                />
 
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.05 }}
-                  className="relative group p-5 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-transparent border border-cyan-500/10 overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative">
-                    <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
-                      <Clock className="w-4 h-4" />
-                      今日新增
-                    </div>
-                    <p className="text-3xl font-bold text-cyan-400">{stats.today}</p>
-                  </div>
-                </motion.div>
+                <StatCard
+                  label="今日新增"
+                  value={stats.today}
+                  icon={Clock}
+                  gradient="success"
+                  trend={{ value: stats.today, label: '24h' }}
+                  delay={0.05}
+                />
 
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="relative group p-5 rounded-2xl bg-gradient-to-br from-red-500/10 to-transparent border border-red-500/10 overflow-hidden"
-                >
-                  <Meteors number={6} />
-                  <div className="relative">
-                    <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
-                      <AlertTriangle className="w-4 h-4" />
-                      紧急热点
-                    </div>
-                    <p className="text-3xl font-bold text-red-400">{stats.urgent}</p>
-                  </div>
-                </motion.div>
+                <StatCard
+                  label="紧急热点"
+                  value={stats.urgent}
+                  icon={AlertTriangle}
+                  gradient="hot"
+                  delay={0.1}
+                />
 
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15 }}
-                  className="relative group p-5 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/10 overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative">
-                    <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
-                      <Target className="w-4 h-4" />
-                      监控词
-                    </div>
-                    <p className="text-3xl font-bold text-emerald-400">{keywords.filter(k => k.isActive).length}</p>
-                  </div>
-                </motion.div>
+                <StatCard
+                  label="监控关键词"
+                  value={keywords.filter(k => k.isActive).length}
+                  icon={Target}
+                  gradient="ai"
+                  delay={0.15}
+                />
               </div>
             )}
 
@@ -586,33 +556,30 @@ function App() {
 
                   {hotspots.map((hotspot, index) => {
                     const heatScore = calcHeatScore(hotspot);
-                    const heat = getHeatLevel(heatScore);
                     return (
                     <motion.div
                       key={hotspot.id}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.03 }}
-                      className="group p-5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-white/10 transition-all"
+                      className={cn(
+                        "group p-5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 transition-all",
+                        hotspot.importance === 'urgent' && "bg-gradient-to-br from-red-500/5 to-pink-500/3 border-red-500/20",
+                        hotspot.importance === 'high' && "bg-gradient-to-br from-orange-500/5 to-red-500/3 border-orange-500/20"
+                      )}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           {/* Row 1: Meta badges */}
                           <div className="flex flex-wrap items-center gap-2 mb-3">
-                            <span className={cn(
-                              "px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider flex items-center",
-                              hotspot.importance === 'urgent' && "bg-red-500/15 text-red-400 border border-red-500/20",
-                              hotspot.importance === 'high' && "bg-orange-500/15 text-orange-400 border border-orange-500/20",
-                              hotspot.importance === 'medium' && "bg-amber-500/15 text-amber-400 border border-amber-500/20",
-                              hotspot.importance === 'low' && "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"
-                            )}>
-                              {getImportanceIcon(hotspot.importance)}
-                              <span className="ml-1">{hotspot.importance}</span>
-                            </span>
-                            <span className="flex items-center gap-1 text-xs text-slate-600">
-                              {getSourceIcon(hotspot.source)}
-                              {getSourceLabel(hotspot.source)}
-                            </span>
+                            <ImportanceBadge
+                              importance={hotspot.importance as 'urgent' | 'high' | 'medium' | 'low'}
+                              size="sm"
+                            />
+                            <SourceBadge
+                              source={hotspot.source}
+                              size="sm"
+                            />
                             {hotspot.keyword && (
                               <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20">
                                 {hotspot.keyword.text}
@@ -620,34 +587,36 @@ function App() {
                             )}
                             {/* 真实性标记 */}
                             {!hotspot.isReal && (
-                              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-red-500/10 text-red-400 border border-red-500/20">
+                              <Badge variant="error" size="sm">
                                 <ShieldAlert className="w-3 h-3" />
                                 可疑
-                              </span>
+                              </Badge>
                             )}
                             {hotspot.isReal && hotspot.relevance >= 80 && (
-                              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              <Badge variant="success" size="sm">
                                 <Shield className="w-3 h-3" />
                                 可信
-                              </span>
+                              </Badge>
                             )}
                             {hotspot.keywordMentioned === true && (
-                              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                              <Badge variant="info" size="sm">
                                 <Target className="w-3 h-3" />
                                 直接提及
-                              </span>
+                              </Badge>
                             )}
                             {hotspot.keywordMentioned === false && (
-                              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
+                              <Badge variant="warning" size="sm">
                                 <Target className="w-3 h-3" />
                                 间接相关
-                              </span>
+                              </Badge>
+                            )}
+                            {hotspot.keyword && (
+                              <Badge variant="default" size="sm">
+                                {hotspot.keyword.text}
+                              </Badge>
                             )}
                             {/* 热度综合指标 */}
-                            <span className={cn("flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-white/5 border border-white/10 font-medium", heat.color)}>
-                              <ThermometerSun className="w-3 h-3" />
-                              {heat.label} {heatScore}
-                            </span>
+                            <HeatBar value={heatScore} showLabel size="sm" />
                           </div>
                           
                           {/* Title */}
