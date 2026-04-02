@@ -2,8 +2,8 @@
   "$schema": "https://railway.app/railway.schema.json",
   "rootDirectory": "server",
   "build": {
-    "command": "chmod +x build.sh && ./build.sh",
-    "builder": "NIXPACKS"
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
   },
   "deploy": {
     "numReplicas": 1,
