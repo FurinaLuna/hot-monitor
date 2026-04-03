@@ -27,6 +27,14 @@ const io = new Server(httpServer, {
   }
 });
 
+async function isMonitoringEnabled(): Promise<boolean> {
+  const setting = await prisma.setting.findUnique({
+    where: { key: 'monitoring_enabled' }
+  });
+  if (!setting) return true;
+  return setting.value.toLowerCase() === 'true';
+}
+
 // Middleware
 app.use(cors({
   origin: allowedOrigins
@@ -47,6 +55,10 @@ app.get('/api/health', (req, res) => {
 // Manual trigger for hotspot check
 app.post('/api/check-hotspots', async (req, res) => {
   try {
+    const enabled = await isMonitoringEnabled();
+    if (!enabled) {
+      return res.status(403).json({ error: 'Monitoring is disabled' });
+    }
     await runHotspotCheck(io);
     res.json({ message: 'Hotspot check completed' });
   } catch (error) {
@@ -76,6 +88,11 @@ io.on('connection', (socket) => {
 cron.schedule('*/30 * * * *', async () => {
   console.log('🔄 Running scheduled hotspot check...');
   try {
+    const enabled = await isMonitoringEnabled();
+    if (!enabled) {
+      console.log('⏸️ Monitoring is disabled, skipping scheduled check');
+      return;
+    }
     await runHotspotCheck(io);
     console.log('✅ Scheduled hotspot check completed');
   } catch (error) {

@@ -4,12 +4,12 @@ import {
   Flame, Search, Plus, Bell, Trash2,
   ExternalLink, RefreshCw, X, Check, AlertTriangle,
   Zap, TrendingUp, Twitter, Globe, Eye, Activity, Clock, Target,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Power,
   MessageCircle, Repeat2, Quote, User, Shield, ShieldAlert,
   ChevronDown, ChevronUp, ChevronsUpDown, ThermometerSun, FileText
 } from 'lucide-react';
 import {
-  keywordsApi, hotspotsApi, notificationsApi, triggerHotspotCheck,
+  keywordsApi, hotspotsApi, notificationsApi, triggerHotspotCheck, settingsApi,
   type Keyword, type Hotspot, type Stats, type Notification
 } from './services/api';
 import { onNewHotspot, onNotification, subscribeToKeywords } from './services/socket';
@@ -56,6 +56,8 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+  const [isTogglingMonitor, setIsTogglingMonitor] = useState(false);
+  const [monitoringEnabled, setMonitoringEnabled] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'keywords' | 'search'>('dashboard');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -86,11 +88,12 @@ function App() {
       if (dashboardFilters.sortBy) filterParams.sortBy = dashboardFilters.sortBy;
       if (dashboardFilters.sortOrder) filterParams.sortOrder = dashboardFilters.sortOrder;
 
-      const [keywordsData, hotspotsData, statsData, notifData] = await Promise.all([
+      const [keywordsData, hotspotsData, statsData, notifData, settingsData] = await Promise.all([
         keywordsApi.getAll(),
         hotspotsApi.getAll(filterParams as any),
         hotspotsApi.getStats(),
-        notificationsApi.getAll({ limit: 20 })
+        notificationsApi.getAll({ limit: 20 }),
+        settingsApi.getAll()
       ]);
       setKeywords(keywordsData);
       setHotspots(hotspotsData.data);
@@ -98,6 +101,7 @@ function App() {
       setStats(statsData);
       setNotifications(notifData.data);
       setUnreadCount(notifData.unreadCount);
+      setMonitoringEnabled(settingsData.monitoring_enabled !== 'false');
 
       // 订阅关键词
       const activeKeywords = keywordsData.filter(k => k.isActive).map(k => k.text);
@@ -199,15 +203,35 @@ function App() {
 
   // 手动触发检查
   const handleManualCheck = async () => {
+    if (!monitoringEnabled) {
+      showToast('监控已关闭，请先开启监控', 'error');
+      return;
+    }
     setIsChecking(true);
     try {
       await triggerHotspotCheck();
       showToast('热点检查已触发', 'success');
       setTimeout(loadData, 5000);
     } catch (error) {
-      showToast('触发失败', 'error');
+      const message = error instanceof Error ? error.message : '触发失败';
+      showToast(message, 'error');
     } finally {
       setIsChecking(false);
+    }
+  };
+
+  const handleToggleMonitoring = async () => {
+    const next = !monitoringEnabled;
+    setIsTogglingMonitor(true);
+    try {
+      await settingsApi.update({ monitoring_enabled: String(next) });
+      setMonitoringEnabled(next);
+      showToast(next ? '监控已开启' : '监控已关闭', 'success');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '切换监控失败';
+      showToast(message, 'error');
+    } finally {
+      setIsTogglingMonitor(false);
     }
   };
 
@@ -373,16 +397,32 @@ function App() {
 
             {/* Actions */}
             <div className="flex items-center gap-3">
+              <button
+                onClick={handleToggleMonitoring}
+                disabled={isTogglingMonitor}
+                className={cn(
+                  "px-3 py-2.5 rounded-xl text-xs font-medium flex items-center gap-2 border transition-all",
+                  isTogglingMonitor && "opacity-70 cursor-wait",
+                  monitoringEnabled
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                    : "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                )}
+              >
+                <Power className="w-3.5 h-3.5" />
+                {monitoringEnabled ? '监控已开启' : '监控已关闭'}
+              </button>
               <motion.button
                 onClick={handleManualCheck}
-                disabled={isChecking}
+                disabled={isChecking || !monitoringEnabled}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className={cn(
                   "px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition-all",
                   isChecking 
                     ? "bg-blue-500/20 text-blue-400 cursor-wait"
-                    : "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40"
+                    : monitoringEnabled
+                      ? "bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40"
+                      : "bg-white/10 text-slate-500 cursor-not-allowed"
                 )}
               >
                 <RefreshCw className={cn("w-4 h-4", isChecking && "animate-spin")} />
