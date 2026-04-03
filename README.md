@@ -8,7 +8,11 @@
 
 ## 在线地址
 - 在线查看地址：[https://hotmonitorfrontend.furinaluna.top](https://hotmonitorfrontend.furinaluna.top)
+
+  > 点击监控开关开始或关闭监控，添加监控词后点击扫描开始抓取信息
+
 - 在线演示：请查看仓库主页的 About 链接或项目发布说明
+
 - API 示例：`https://api.your-domain.com/api/health`
 
 ## 项目亮点
