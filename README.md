@@ -1,271 +1,207 @@
 # 🔥 Hot Monitor
 
-> 一款自动发现热点、智能识别真假内容、实时推送通知的 AI 工具
+> AI 热点监控系统：多源抓取、智能判真、实时推送、可视化追踪
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org)
 [![React](https://img.shields.io/badge/react-19.2-61dafb.svg)](https://reactjs.org)
 
-## 📸 项目截图
+## 在线地址
+- 在线查看地址：[https://hotmonitorfrontend.furinaluna.top](https://hotmonitorfrontend.furinaluna.top)
+- 在线演示：请查看仓库主页的 About 链接或项目发布说明
+- API 示例：`https://api.your-domain.com/api/health`
 
-> _赛博朋克风格的现代化 UI，支持暗色主题，实时热点追踪_
+## 项目亮点
 
-## ✨ 核心功能
+- 多数据源聚合抓取：Twitter/X、Bing、Hacker News、搜狗、微博、Bilibili
+- AI 内容分析：真假识别、相关性评分、关键词提及判断、摘要生成
+- 实时消息推送：Socket.IO 通知新热点和站内提醒
+- 关键词订阅监控：按关键词维度聚合热点并实时追踪
+- 赛博朋克风 UI：暗色主题、动效卡片、可视化热度指标
 
-### 🎯 关键词监控
-- 添加自定义关键词进行实时监控
-- 当关键词相关内容出现时，利用 AI 自动识别真假内容
-- 第一时间发送通知提醒
-
-### 📡 热点收集
-- 每 30 分钟自动抓取指定范围内的热点信息
-- 多数据源聚合（网页搜索 + Twitter/X）
-- AI 分析热点价值和可信度
-
-### 🔔 通知系统
-- 浏览器实时推送（WebSocket）
-- 邮件通知（SMTP）
-
-### 🤖 AI 分析
-- 基于大语言模型的真假内容识别
-- 热点相关性评估（0-100分）
-- 重要程度分级（低/中/高/紧急）
-- 自动生成内容摘要
-
-## 🛠️ 技术栈
+## 技术栈
 
 ### 前端
-| 技术 | 版本 | 说明 |
-|------|------|------|
-| React | 19.2 | 现代化 UI 框架 |
-| Vite | 7.2 | 极速构建工具 |
-| TailwindCSS | 4.x | 原子化 CSS 框架 |
-| Framer Motion | 12.x | 动画库 |
-| Socket.io Client | 4.8 | 实时通信 |
-| Lucide React | 0.563 | 图标库 |
+
+- React 19 + Vite + TypeScript
+- TailwindCSS + Framer Motion
+- Socket.IO Client
 
 ### 后端
-| 技术 | 版本 | 说明 |
-|------|------|------|
-| Node.js | 18+ | 运行环境 |
-| Express | 5.2 | Web 框架 |
-| Prisma | 6.19 | ORM |
-| SQLite | - | 轻量级数据库 |
-| Socket.io | 4.8 | WebSocket 服务 |
-| node-cron | 4.2 | 定时任务 |
-| OpenRouter SDK | 0.5 | AI 服务 |
-| Nodemailer | 8.0 | 邮件发送 |
 
-## 📁 项目结构
+- Node.js + Express 5 + TypeScript
+- Prisma + SQLite
+- Socket.IO + node-cron
+- OpenRouter SDK + Nodemailer
 
-```
-hot-monitor/
-├── client/                     # 前端应用
-│   ├── src/
-│   │   ├── components/        # UI 组件
-│   │   │   └── ui/            # 通用 UI 组件
-│   │   ├── services/          # API 调用 & Socket
-│   │   ├── utils/             # 工具函数
-│   │   └── lib/               # 工具库
-│   └── package.json
-├── server/                     # 后端服务
-│   ├── src/
-│   │   ├── routes/            # API 路由
-│   │   │   ├── keywords.ts    # 关键词管理
-│   │   │   ├── hotspots.ts    # 热点数据
-│   │   │   ├── settings.ts    # 系统设置
-│   │   │   └── notifications.ts # 通知管理
-│   │   ├── services/          # 业务逻辑
-│   │   │   ├── ai.ts          # AI 分析服务
-│   │   │   ├── search.ts      # 网页搜索
-│   │   │   ├── chinaSearch.ts # 国内搜索源
-│   │   │   ├── twitter.ts     # Twitter 服务
-│   │   │   └── email.ts       # 邮件服务
-│   │   ├── jobs/              # 定时任务
-│   │   │   └── hotspotChecker.ts
-│   │   └── __tests__/         # 测试文件
-│   ├── prisma/                # 数据库 Schema
-│   └── package.json
-├── docs/                       # 文档
-│   ├── README.md              # 项目说明
-│   ├── REQUIREMENTS.md        # 需求文档
-│   └── LOCAL_SETUP.md         # 本地部署
-└── skills/                     # Agent Skills
-    └── hot-monitor/
-        ├── scripts/           # Python 脚本
-        └── references/        # 参考文档
+## 部署方式（2 种）
+
+### 方式 A：云端分离部署（推荐）
+
+```text
+Vercel (Frontend)
+  └─ 调用 API / WebSocket
+     ↓
+Cloudflare Worker (反向代理)
+  └─ 转发到
+     ↓
+Railway (Backend API + Socket.IO)
+  └─ Prisma + SQLite
 ```
 
-## 🚀 快速开始
+适用场景：快速上线、自动 CI/CD、低运维成本。  
+当前线上即采用该方式。
 
-### 环境要求
-- Node.js >= 18.0.0
-- npm >= 9.0.0
-
-### 安装步骤
+### 方式 B：Docker 自托管部署
 
 ```bash
-# 1. 克隆项目
-git clone https://github.com/FurinaLuna/hot-monitor.git
-cd hot-monitor
-
-# 2. 安装后端依赖
-cd server
-npm install
-
-# 3. 安装前端依赖
-cd ../client
-npm install
-
-# 4. 配置环境变量
-cd ../server
-cp .env.example .env
-# 编辑 .env 文件填入你的配置
-
-# 5. 初始化数据库
-npx prisma migrate dev
-
-# 6. 启动后端服务
-npm run dev
-
-# 7. 启动前端（新终端）
-cd ../client
-npm run dev
+# 在仓库根目录
+docker build -t hot-monitor-server .
+docker run -d \
+  --name hot-monitor-server \
+  -p 3001:3001 \
+  -e CLIENT_URL=http://localhost:5173 \
+  -e OPENROUTER_API_KEY=your_openrouter_api_key_here \
+  -e TWITTER_API_KEY=your_twitter_api_key_here \
+  -e DATABASE_URL='file:/app/data/dev.db' \
+  -v hot_monitor_sqlite:/app/data \
+  hot-monitor-server
 ```
 
-### 访问地址
-- 前端：http://localhost:5173
-- 后端 API：http://localhost:3001
-- 健康检查：http://localhost:3001/api/health
+适用场景：私有化部署、内网部署、单机快速验证后端服务。
 
-## ⚙️ 配置说明
+## 仓库结构
 
-创建 `server/.env` 文件：
+```text
+.
+├─ client/        # 前端应用（Vite + React）
+├─ server/        # 后端服务（Express + Prisma + Socket.IO）
+├─ cloudflare/    # Cloudflare Worker 反向代理脚本
+├─ docs/          # 设计与部署文档
+└─ skills/        # 辅助脚本与调研能力
+```
+
+## 本地开发
+
+### 1) 环境要求
+
+- Node.js >= 18
+- npm >= 9
+
+### 2) 安装依赖
+
+```bash
+cd server && npm install
+cd ../client && npm install
+```
+
+### 3) 配置后端环境变量
+
+复制并编辑 `server/.env`：
 
 ```env
-# 服务配置
+DATABASE_URL="file:./dev.db"
 PORT=3001
 CLIENT_URL=http://localhost:5173
 
-# 数据库
-DATABASE_URL="file:./dev.db"
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+TWITTER_API_KEY=your_twitter_api_key_here
 
-# OpenRouter AI
-OPENROUTER_API_KEY=your_openrouter_key
-
-# Twitter API (twitterapi.io)
-TWITTER_API_KEY=your_twitter_api_key
-
-# 邮件通知 (可选)
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
-SMTP_USER=your_email
-SMTP_PASS=your_password
-NOTIFY_EMAIL=receive@example.com
-
-# 监控配置
-MONITOR_INTERVAL=1800000  # 30分钟
+SMTP_SECURE=false
+SMTP_USER=your_email@example.com
+SMTP_PASS=your_email_password
+NOTIFY_EMAIL=notify_to@example.com
 ```
 
-## 📊 数据模型
+### 4) 初始化数据库
 
-### Keyword（关键词）
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | UUID | 主键 |
-| text | String | 关键词内容 |
-| category | String | 分类 |
-| isActive | Boolean | 是否启用 |
-
-### Hotspot（热点）
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | UUID | 主键 |
-| title | String | 标题 |
-| content | String | 内容 |
-| url | String | 原文链接 |
-| source | String | 来源 |
-| isReal | Boolean | AI 识别真假 |
-| relevance | Int | 相关性评分 |
-| importance | String | 重要程度 |
-| summary | String | AI 摘要 |
-
-## 🔌 API 接口
-
-### 关键词管理
-```
-GET    /api/keywords         # 获取所有关键词
-POST   /api/keywords         # 添加关键词
-PUT    /api/keywords/:id     # 更新关键词
-DELETE /api/keywords/:id     # 删除关键词
+```bash
+cd server
+npx prisma generate
+npx prisma migrate deploy
 ```
 
-### 热点数据
-```
-GET    /api/hotspots         # 获取热点列表
-GET    /api/hotspots/:id     # 获取热点详情
-POST   /api/hotspots/search  # 手动搜索
-```
+### 5) 启动服务
 
-### WebSocket 事件
-```
-# 客户端 -> 服务端
-subscribe      # 订阅关键词
-unsubscribe    # 取消订阅
+```bash
+# 终端 1
+cd server
+npm run dev
 
-# 服务端 -> 客户端
-hotspot:new    # 新热点发现
-notification   # 通知消息
+# 终端 2
+cd client
+npm run dev
 ```
 
-## 📈 开发进度
+默认访问：
 
-- [x] 项目架构设计
-- [x] 后端 API 开发
-- [x] 数据库设计
-- [x] AI 服务集成
-- [x] 前端页面开发
-- [x] WebSocket 实时推送
-- [x] 定时任务调度
-- [ ] 邮件通知完善
-- [ ] 单元测试覆盖
-- [ ] 部署文档
+- 前端：http://localhost:5173
+- 后端健康检查：http://localhost:3001/api/health
 
-## 📝 开发日志
+## 生产环境变量建议
 
-### 2026-02
-- 完成项目初始化
-- 实现后端 API 框架
-- 集成 OpenRouter AI 服务
-- 完成前端赛博朋克风格 UI
+### Vercel（前端）
 
-### 2026-03
-- 优化热点排序算法
-- 添加多数据源支持
-- 完善 WebSocket 实时推送
+```env
+VITE_API_BASE_URL=https://api.your-domain.com
+VITE_SOCKET_URL=https://api.your-domain.com
+```
 
-## 🤝 贡献指南
+### Railway（后端）
 
-欢迎提交 Issue 和 Pull Request！
+```env
+CLIENT_URL=https://frontend.your-domain.com
+```
 
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 创建 Pull Request
+如有多个前端来源可逗号分隔：
 
-## 📄 许可证
+```env
+CLIENT_URL=https://frontend.your-domain.com,https://admin.your-domain.com
+```
 
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
+### Cloudflare Worker 反向代理配置步骤
 
-## 🙏 致谢
+1. 打开 Cloudflare 控制台，进入 Workers & Pages，创建一个 Worker（例如 `hot-monitor-api-proxy`）。
+2. 将 [worker.js](file:///d:/项目/zcw-hot-monitor/cloudflare/worker.js) 部署到 Worker。
+3. 在 Worker Settings → Variables 添加：
+   - `FRONTEND_ORIGIN=https://frontend.your-domain.com`
+   - `RAILWAY_BACKEND_URL=https://your-service.up.railway.app`
+4. 在 Worker Triggers 绑定自定义域名（例如 `api.your-domain.com`）。
+5. 在 Vercel 前端变量中将 `VITE_API_BASE_URL` 与 `VITE_SOCKET_URL` 指向 `https://api.your-domain.com`，然后重新部署。
+6. 用以下地址验证：
+   - `https://api.your-domain.com/api/health`
+   - `https://api.your-domain.com/socket.io/?EIO=4&transport=polling`
 
-- [OpenRouter](https://openrouter.ai/) - AI 服务
-- [twitterapi.io](https://twitterapi.io/) - Twitter 数据
-- [Prisma](https://www.prisma.io/) - 数据库 ORM
+## 常见问题
 
----
+### 1) `Cannot GET /` 是不是后端坏了？
 
-**作者**: [FurinaLuna](https://github.com/FurinaLuna)
+不是。后端只提供 `/api/*` 路由，根路径 `/` 返回 `Cannot GET /` 属于正常现象。  
+请用 `/api/health` 验证服务是否存活。
 
-**项目地址**: [https://github.com/FurinaLuna/hot-monitor](https://github.com/FurinaLuna/hot-monitor)
+### 2) 浏览器报 WebSocket 404
+
+通常是前端 Socket 地址连到了前端域名，而不是 API 域名。  
+请确认前端已配置：
+
+- `VITE_SOCKET_URL=https://api.your-domain.com`
+- 重新部署 Vercel
+
+### 3) CORS 报错
+
+请确认后端 `CLIENT_URL` 与真实前端域名一致。
+
+## 路线图
+
+- [x] 多源热点抓取
+- [x] AI 相关性与真实性分析
+- [x] WebSocket 实时通知
+- [x] 生产部署（Vercel + Railway + Cloudflare）
+- [ ] 邮件通知策略优化
+- [ ] 测试覆盖率提升
+
+## 许可证
+
+MIT License

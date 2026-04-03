@@ -24,6 +24,7 @@ RUN mkdir -p /app/data
 
 ENV NODE_ENV=production
 ENV PORT=3001
+ENV DATABASE_URL="file:/app/data/dev.db"
 
 # Copy package files for production install
 COPY server/package*.json ./
