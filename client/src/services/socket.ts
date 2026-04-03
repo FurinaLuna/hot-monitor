@@ -1,7 +1,10 @@
 import { io, Socket } from 'socket.io-client';
 
 let socket: Socket | null = null;
-const SOCKET_BASE_URL = import.meta.env.VITE_SOCKET_URL?.trim() || window.location.origin;
+const SOCKET_BASE_URL =
+  import.meta.env.VITE_SOCKET_URL?.trim() ||
+  import.meta.env.VITE_API_BASE_URL?.trim() ||
+  window.location.origin;
 
 export function getSocket(): Socket {
   if (!socket) {
